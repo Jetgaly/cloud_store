@@ -1,0 +1,30 @@
+mysql:
+  host: 127.0.0.1
+  port: 3306
+  db: cloud_store_db
+  config: charset=utf8mb4&parseTime=True&loc=Local
+  user: jet
+  password: Qwe@123456
+  log_level: dev 
+
+logger:
+  dev: true
+  level: info
+  outputPaths:
+    - stdout
+  errorOutputPaths: #  Zap 内部错误输出到单独的错误日志文件
+    - stderr
+
+redis:
+  ip: 127.0.0.1
+  port: 6379
+  password: Qwe@123456
+  pool_size: 100
+
+Email:
+  Host: smtp.qq.com
+  Port: 587
+  User: xxxxx@qq.com
+  Password: pxxxxxdugnxcxxea
+
+  
