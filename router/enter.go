@@ -16,5 +16,5 @@ func InitRouter() {
 	// global.Engine.Use(ginzap.RecoveryWithZap(global.Logger, true))
 
 	InitUserRouter(global.Engine)
-	InitFileRouter()
+	InitFileRouter(global.Engine)
 }

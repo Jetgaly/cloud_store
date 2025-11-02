@@ -5,7 +5,7 @@ mysql:
   config: charset=utf8mb4&parseTime=True&loc=Local
   user: jet
   password: Qwe@123456
-  log_level: dev 
+  log_level: dev
 
 logger:
   dev: true
@@ -27,4 +27,6 @@ Email:
   User: xxxxx@qq.com
   Password: pxxxxxdugnxcxxea
 
-  
+upload:
+  temp_path: temp
+  chunk_size: 5242880 # 5mb

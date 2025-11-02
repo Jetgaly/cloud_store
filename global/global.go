@@ -11,14 +11,17 @@ import (
 )
 
 var (
-	Engine      *gin.Engine
-	Config      *config.Config
-	Logger      *zap.Logger
-	DB          *gorm.DB
-	EmailSender *utils.EmailSender
-	RDB         *redis.Client
+	Engine           *gin.Engine
+	Config           *config.Config
+	Logger           *zap.Logger
+	DB               *gorm.DB
+	EmailSender      *utils.EmailSender
+	RDB              *redis.Client
+	SnowFlakeCreater *utils.SafeSnowFlakeCreater
 )
 
 const (
 	EmailCodePrefix string = "cs:"
+	FileMetaPrefix  string = "cs:meta:"
+	FileSetPrefix   string = "cs:set:"
 )

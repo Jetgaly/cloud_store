@@ -35,9 +35,12 @@ func InitGorm() {
 }
 
 func CreateTables() {
+	global.DB.SetupJoinTable(&model.User{}, "Files", &model.UserFile{})
 	err := global.DB.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(
 		&model.User{},
 		&model.File{},
+		&model.UserFile{},
+		&model.VolumeOpLog{},
 	)
 	if err != nil {
 		global.Logger.DPanic(fmt.Sprintf("gorm create tables err: %s", err.Error()))

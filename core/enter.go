@@ -1,5 +1,7 @@
 package core
 
+import "cloud_store/global"
+
 func init() {
 	InitConf()
 	InitLogger()
@@ -7,4 +9,6 @@ func init() {
 	InitGorm()
 	CreateTables()
 	InitRedis()
+	InitUploadTempDir(global.Config.Upload.TempPath)
+	InitSnowFlake()
 }
