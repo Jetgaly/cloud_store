@@ -6,4 +6,5 @@ type Config struct {
 	Logger Logger `yaml:"logger"`
 	Redis  Redis  `yaml:"redis"`
 	Upload Upload `yaml:"upload"`
+	RMQ    RMQ    `yaml:"rmq"`
 }

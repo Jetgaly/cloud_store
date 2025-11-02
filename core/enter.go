@@ -11,4 +11,5 @@ func init() {
 	InitRedis()
 	InitUploadTempDir(global.Config.Upload.TempPath)
 	InitSnowFlake()
+	InitRMQ()
 }

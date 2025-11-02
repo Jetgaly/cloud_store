@@ -30,3 +30,6 @@ Email:
 upload:
   temp_path: temp
   chunk_size: 5242880 # 5mb
+
+rmq:
+  dsn: amqp://admin:admin@localhost:5672/

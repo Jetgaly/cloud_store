@@ -13,7 +13,7 @@ var errCode = map[string]string{
 	"1007": "status is finish/cancel",
 	"1008": "status is not upload",
 	"1009": "missing index",
-	"1010": "hash err,file is broken",
+	"1010": "hash err,file is broken", //next : 重新上传
 }
 
 type Response struct {

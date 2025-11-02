@@ -60,6 +60,23 @@ else
 end
 
 `
+var finishRecoverLua = `
+local r = redis.call('hmget', KEYS[1], 'status', 'act')
+local s = tonumber(r[1])
+local l_act = tonumber(r[2])
+local n_act = tonumber(ARGV[1])
+
+if l_act <= n_act then
+    redis.call('hset', KEYS[1], 'act', ARGV[1])
+end
+
+if status == 2 then
+    redis.call('hset', KEYS[1], 'status', '1')
+end
+
+return 0
+
+`
 
 func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 	var Req UploadFinishReq
@@ -143,12 +160,18 @@ func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 
 		ccnt, e1 := strconv.Atoi(rCcnt)
 		if e1 != nil {
+			if _, re1 := global.RDB.Eval(context.TODO(), finishRecoverLua, []string{hKey}, time.Now().Unix()).Result(); re1 != nil {
+				global.Logger.Error("finishRecoverLua err:" + re1.Error())
+			}
 			global.Logger.Error("trconv.Atoi(rCcnt) err:" + e1.Error())
 			utils.ResponseWithMsg("[internal server err]", ctx)
 			return
 		}
 		var finalFile *os.File
 		if finalFile, err = os.OpenFile(finalFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644); err != nil {
+			if _, re1 := global.RDB.Eval(context.TODO(), finishRecoverLua, []string{hKey}, time.Now().Unix()).Result(); re1 != nil {
+				global.Logger.Error("finishRecoverLua err:" + re1.Error())
+			}
 			global.Logger.Error("OpenFile err: " + err.Error())
 			utils.ResponseWithMsg("[internal server err]", ctx)
 			return
@@ -160,6 +183,9 @@ func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 			// 打开分片文件
 			chunkFile, e1 := os.Open(chunkPath)
 			if e1 != nil {
+				if _, re1 := global.RDB.Eval(context.TODO(), finishRecoverLua, []string{hKey}, time.Now().Unix()).Result(); re1 != nil {
+					global.Logger.Error("finishRecoverLua err:" + re1.Error())
+				}
 				global.Logger.Error("os.Open(chunkPath) err: " + e1.Error())
 				utils.ResponseWithMsg("[internal server err]", ctx)
 				return
@@ -168,6 +194,9 @@ func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 			_, e1 = io.Copy(finalFile, chunkFile)
 			chunkFile.Close()
 			if e1 != nil {
+				if _, re1 := global.RDB.Eval(context.TODO(), finishRecoverLua, []string{hKey}, time.Now().Unix()).Result(); re1 != nil {
+					global.Logger.Error("finishRecoverLua err:" + re1.Error())
+				}
 				global.Logger.Error("io.Copy(finalFile, chunkFile) err: " + e1.Error())
 				utils.ResponseWithMsg("[internal server err]", ctx)
 				return
@@ -177,6 +206,9 @@ func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 		fmt.Println("hash:", rHash)
 		hash, e2 := utils.CalculateSHA256Stream(finalFilePath)
 		if e2 != nil {
+			if _, re1 := global.RDB.Eval(context.TODO(), finishRecoverLua, []string{hKey}, time.Now().Unix()).Result(); re1 != nil {
+				global.Logger.Error("finishRecoverLua err:" + re1.Error())
+			}
 			global.Logger.Error("utils.CalculateSHA256Stream(finalFilePath) err: " + e2.Error())
 			utils.ResponseWithMsg("[internal server err]", ctx)
 			return

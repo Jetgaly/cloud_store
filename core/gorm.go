@@ -43,6 +43,6 @@ func CreateTables() {
 		&model.VolumeOpLog{},
 	)
 	if err != nil {
-		global.Logger.DPanic(fmt.Sprintf("gorm create tables err: %s", err.Error()))
+		global.Logger.Fatal(fmt.Sprintf("gorm create tables err: %s", err.Error()))
 	}
 }

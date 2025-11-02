@@ -6,7 +6,7 @@ import "time"
 status:
 0:pending
 1:over
-2:canel
+2:cancel
 */
 type VolumeOpLog struct {
 	ID        int64  `gorm:"primaryKey"`

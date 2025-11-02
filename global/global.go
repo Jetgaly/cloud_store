@@ -3,6 +3,7 @@ package global
 import (
 	"cloud_store/config"
 	"cloud_store/utils"
+	RMQUtils "cloud_store/utils/RabbitMQ"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -18,6 +19,7 @@ var (
 	EmailSender      *utils.EmailSender
 	RDB              *redis.Client
 	SnowFlakeCreater *utils.SafeSnowFlakeCreater
+	RMQ              *RMQUtils.RMQ
 )
 
 const (

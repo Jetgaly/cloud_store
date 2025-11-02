@@ -4,14 +4,18 @@ import (
 	"cloud_store/global"
 	"cloud_store/model"
 	"cloud_store/utils"
+	RMQUtils "cloud_store/utils/RabbitMQ"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"time"
 
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rabbitmq/amqp091-go"
 	"gorm.io/gorm"
 )
 
@@ -29,6 +33,11 @@ type UploadInitReq struct {
 	Hash     string `json:"hash" binding:"required,len=64,hexadecimal"`
 	Size     string `json:"size" binding:"required,numeric,min=1"`
 	FileName string `json:"name" binding:"required,min=1,max=512"`
+}
+
+type CleanMsg struct {
+	UploadId string `json:"upid"`
+	UserId   string `json:"uid"`
 }
 
 var (
@@ -178,5 +187,65 @@ func (*FileApi) UploadInitLogic(ctx *gin.Context) {
 		utils.ResponseWithMsg("[internal server err]", ctx)
 		return
 	}
+	var cwc *RMQUtils.ChannelWithConfirm
+	for {
+		cwc, err = global.RMQ.Get()
+		if errors.Is(err, RMQUtils.ErrTimeout) {
+			global.Logger.Error("[RMQ] get channel timeout")
+			continue
+		} else if err != nil {
+			global.Logger.Error(fmt.Sprintf("[RMQ] get channel err:%s,upid:%d", err.Error(), upId))
+			utils.ResponseWithMsg("[internal server err]", ctx)
+			return
+		}
+		break
+	}
+	mqMsg := CleanMsg{
+		UploadId: Meta.UploadId,
+		UserId: Meta.UserId,
+	}
+	confirm := *(cwc.Confirm)
+	var body []byte
+	body, err = json.Marshal(mqMsg)
+	if err != nil {
+		global.Logger.Error(fmt.Sprintf("[json] marshal err:%s,upid:%d", err.Error(), upId))
+		utils.ResponseWithMsg("[internal server err]", ctx)
+		return
+	}
+	err = cwc.Channel.PublishWithContext(
+		context.TODO(),
+		"cs.clean.delayexc", // exchange
+		"cs.clean.delay",    // routing key
+		false,               // mandatory
+		false,               // immediate
+		amqp091.Publishing{
+			ContentType:  "application/json",
+			Body:         body,
+			DeliveryMode: amqp091.Persistent, // 消息持久化
+			Timestamp:    time.Now(),
+		})
+	if err != nil {
+		global.Logger.Error(fmt.Sprintf("[RMQ] send err:%s,upid:%d", err.Error(), upId))
+		utils.ResponseWithMsg("[internal server err]", ctx)
+		return
+	}
+	select {
+	case cf := <-confirm:
+		if cf.Ack {
+			global.Logger.Info("Message confirmed")
+		} else {
+			global.Logger.Error(fmt.Sprintf("[RMQ] send fail,upid:%d", upId))
+			cwc.Channel.Close()
+			utils.ResponseWithMsg("[internal server err]", ctx)
+			return
+		}
+	case <-time.After(5 * time.Second): //超时时间
+		global.Logger.Error(fmt.Sprintf("[RMQ] confirm timeout,upid:%d", upId))
+		//超时直接关闭，不要放回channel池
+		cwc.Channel.Close()
+		utils.ResponseWithMsg("[internal server err]", ctx)
+		return
+	}
+	global.RMQ.Put(cwc)
 	utils.ResponseWithData(Meta, ctx)
 }
