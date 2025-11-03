@@ -13,4 +13,5 @@ func init() {
 	InitSnowFlake()
 	InitRMQ()
 	InitMinIO()
+	InitRedLock()
 }

@@ -22,6 +22,7 @@ var (
 	SnowFlakeCreater *utils.SafeSnowFlakeCreater
 	RMQ              *RMQUtils.RMQ
 	MinioCli         *minio.Client
+	RedLockCreater   *utils.RedLockCreater
 )
 
 const (

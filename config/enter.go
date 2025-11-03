@@ -1,11 +1,12 @@
 package config
 
 type Config struct {
-	Mysql  Mysql  `yaml:"mysql"`
-	Email  Email  `yaml:"Email"`
-	Logger Logger `yaml:"logger"`
-	Redis  Redis  `yaml:"redis"`
-	Upload Upload `yaml:"upload"`
-	RMQ    RMQ    `yaml:"rmq"`
-	MinIO  MinIO  `yaml:"MinIO"`
+	Mysql   Mysql   `yaml:"mysql"`
+	Email   Email   `yaml:"Email"`
+	Logger  Logger  `yaml:"logger"`
+	Redis   Redis   `yaml:"redis"`
+	Upload  Upload  `yaml:"upload"`
+	RMQ     RMQ     `yaml:"rmq"`
+	MinIO   MinIO   `yaml:"MinIO"`
+	RedLock RedLock `yaml:"redlock"`
 }
