@@ -13,4 +13,5 @@ func InitFileRouter(e *gin.Engine) {
 	r.POST("/file/chunk", middleware.JwtAuth(), api.Handler.FileApi.UploadLogic)
 	r.POST("/file/finish", middleware.JwtAuth(), api.Handler.FileApi.UploadFinishLogic)
 	r.POST("/file/cancel", middleware.JwtAuth(), api.Handler.FileApi.UploadCancelLogic)
+	r.GET("/file/:id", middleware.JwtAuth(), api.Handler.FileApi.DownloadLogic)
 }

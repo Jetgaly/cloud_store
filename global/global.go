@@ -2,6 +2,7 @@ package global
 
 import (
 	"cloud_store/config"
+
 	"cloud_store/utils"
 	RMQUtils "cloud_store/utils/RabbitMQ"
 
@@ -29,4 +30,5 @@ const (
 	EmailCodePrefix string = "cs:"
 	FileMetaPrefix  string = "cs:meta:"
 	FileSetPrefix   string = "cs:set:"
+	RedLockPrefix   string = "cs:lock:"
 )

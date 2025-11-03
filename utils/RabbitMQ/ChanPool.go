@@ -20,7 +20,7 @@ type ChannelWithConfirm struct {
 
 type RMQChannelPool struct {
 	channels  chan *ChannelWithConfirm
-	pool      *RMQConnPool
+	Pool      *RMQConnPool
 	minChan   int
 	overChan  int
 	mutex     sync.Mutex
@@ -30,7 +30,7 @@ type RMQChannelPool struct {
 func NewRMQChannelPool(connPool *RMQConnPool, minChan int, overChan int) (*RMQChannelPool, error) {
 	channelPool := &RMQChannelPool{
 		channels: make(chan *ChannelWithConfirm, minChan),
-		pool:     connPool,
+		Pool:     connPool,
 		minChan:  minChan,
 		overChan: overChan,
 	}
@@ -70,19 +70,19 @@ func (p *RMQChannelPool) Get() (*ChannelWithConfirm, error) {
 	select {
 	case ch := <-p.channels:
 		if ch.Channel.IsClosed() {
-			conn, err := p.pool.Get()
+			conn, err := p.Pool.Get()
 			if err != nil {
 				return nil, err
 			}
 			var channel *amqp.Channel
 			channel, err = conn.Channel()
 			if err != nil {
-				p.pool.Put(conn)
+				p.Pool.Put(conn)
 				return nil, err
 			}
 			err = channel.Confirm(false)
 			if err != nil {
-				p.pool.Put(conn)
+				p.Pool.Put(conn)
 				return nil, err
 			}
 			confirm := channel.NotifyPublish(make(chan amqp.Confirmation, 1))
@@ -90,18 +90,18 @@ func (p *RMQChannelPool) Get() (*ChannelWithConfirm, error) {
 				Channel: channel,
 				Confirm: &confirm,
 			}
-			p.pool.Put(conn)
+			p.Pool.Put(conn)
 		}
 		return ch, nil
 	default:
 		p.mutex.Lock()
 		if p.overCount < p.overChan {
-			conn, err := p.pool.Get()
+			conn, err := p.Pool.Get()
 			if err != nil {
 				return nil, err
 			}
 			c, e1 := conn.Channel()
-			p.pool.Put(conn)
+			p.Pool.Put(conn)
 			p.overCount++
 			p.mutex.Unlock()
 			e2 := c.Confirm(false)

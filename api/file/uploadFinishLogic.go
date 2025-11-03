@@ -5,6 +5,7 @@ import (
 	"cloud_store/model"
 	"cloud_store/utils"
 	"context"
+	"errors"
 
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redsync/redsync/v4"
 
 	"github.com/minio/minio-go/v7"
 	"gorm.io/gorm"
@@ -155,6 +157,59 @@ func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 		utils.ResponseWithCode("1008", ctx)
 		return
 	case 2:
+		//分布式锁去重 hash锁
+		cancelCtx, cancel := context.WithCancel(context.Background())
+		var lock *redsync.Mutex
+		var rlerr error
+		for {
+			lock, rlerr = global.RedLockCreater.GetLock(cancelCtx, global.RedLockPrefix+rHash, redsync.WithTries(3))
+			if rlerr == nil {
+				//获取成功
+				break
+			}
+		}
+		//释放锁
+		defer global.RedLockCreater.ReleaseLock(lock, cancel)
+		//检查上一个锁得者是否上传完毕
+		e0 := global.DB.Transaction(func(tx *gorm.DB) error {
+			var fModel model.File
+			txerr := tx.Take(&fModel, "hash=?", rHash).Error
+			if errors.Is(txerr, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			if txerr != nil {
+				return txerr
+			}
+			var fn string
+			var re error
+			if fn, re = global.RDB.HGet(context.Background(), hKey, "fn").Result(); re != nil {
+				return re
+			}
+			//找到记录
+			relation := model.UserFile{
+				UserId:   int64(claims.UserId),
+				FileId:   int64(fModel.ID),
+				FileName: fn,
+			}
+			if e := tx.Create(&relation).Error; e != nil {
+				return e
+			}
+			//修改log
+			if e := tx.Model(&model.VolumeOpLog{}).Where("upload_id = ?", Req.UploadId).Update("status", 1).Error; e != nil {
+				return e
+			}
+			return nil
+		})
+
+		if e0 != nil {
+			if _, re1 := global.RDB.Eval(context.TODO(), finishRecoverLua, []string{hKey}, time.Now().Unix()).Result(); re1 != nil {
+				global.Logger.Error("finishRecoverLua err:" + re1.Error())
+			}
+			global.Logger.Error("global.DB.Transaction err:" + e0.Error())
+			utils.ResponseWithMsg("[internal server err]", ctx)
+			return
+		}
+
 		var fileName string
 		fileName = rStr
 		list := strings.Split(fileName, ".")
@@ -229,17 +284,15 @@ func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 		// Upload
 		info, e3 := global.MinioCli.FPutObject(ctx, bucketName, objectName, finalFilePath, minio.PutObjectOptions{ContentType: contentType})
 		if e3 != nil {
+			if _, re1 := global.RDB.Eval(context.TODO(), finishRecoverLua, []string{hKey}, time.Now().Unix()).Result(); re1 != nil {
+				global.Logger.Error("finishRecoverLua err:" + re1.Error())
+			}
 			global.Logger.Error("minio upload err: " + e3.Error())
 			utils.ResponseWithMsg("[internal server err]", ctx)
 			return
 		}
-		//二次校验hash
-		if info.ChecksumSHA256 != hash {
-			global.Logger.Info("infohash:" + info.ChecksumSHA256)
-			utils.ResponseWithCode("1010", ctx)
-			return
-		}
-
+		//fmt.Println("infosize",info.Size)
+		//fmt.Println("infosha",info.ChecksumSHA256)//显式声明才能返回hash
 		//mysql
 		fileModel := model.File{
 			Name: objectName,
@@ -259,6 +312,10 @@ func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 			if e := tx.Create(&relation).Error; e != nil {
 				return e
 			}
+			//修改log
+			if e := tx.Model(&model.VolumeOpLog{}).Where("upload_id = ?", Req.UploadId).Update("status", 1).Error; e != nil {
+				return e
+			}
 			return nil
 		})
 		if e4 != nil {
@@ -274,11 +331,11 @@ func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 			"3", //cancel
 		}).Result()
 		if e5 != nil {
-			global.Logger.Error(fmt.Sprintf("redis set cancel err: %s,upid: %s"+e5.Error(), Req.UploadId))
+			global.Logger.Error(fmt.Sprintf("redis set cancel err: %s,upid: %s", e5.Error(), Req.UploadId))
 			utils.ResponseWithMsg("[internal server err]", ctx)
 			return
 		}
-		
+
 	case 3:
 		//missing
 		utils.ResponseWithCodeAndData("1009", rStr, ctx)

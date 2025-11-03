@@ -22,13 +22,14 @@ func InitMinIO() {
 		Secure: useSSL,
 	})
 	if err != nil {
-		global.Logger.Fatal("minio init err: " + err.Error())
+		global.Logger.Fatal("miniocli init err: " + err.Error())
 	}
 
 	// Make a new bucket
 	bucketName := global.Config.MinIO.UploadBucket
-	location := "any"
+	location := "us-east-1"//自建集群默认us-east-1
 
+	//fmt.Println(global.Config.MinIO)
 	err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: location})
 	if err != nil {
 		// Check to see if we already own this bucket
@@ -39,5 +40,6 @@ func InitMinIO() {
 			global.Logger.Fatal("minio init err: " + err.Error())
 		}
 	} 
+	global.MinioCli = minioClient
 	
 }

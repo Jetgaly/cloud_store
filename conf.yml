@@ -35,11 +35,11 @@ rmq:
   dsn: amqp://admin:admin@localhost:5672/
 
 MinIO:
-  Endpoint: 127.0.0.1:9090
+  Endpoint: 127.0.0.1:9000
   AccessKeyID: minioadmin
   SecretAccessKey: minioadmin
   UseSSL: false
-  UploadBucket: csBucket
+  UploadBucket: csbucket
 
 redlock:
   hosts:

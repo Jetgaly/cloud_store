@@ -20,7 +20,7 @@ import (
 var (
 	filePath string = "/home/jjet/projects/GoProjects/cloud_store/test/file/bigImg.jpg"
 	baseURL  string = "http://127.0.0.1:8080/api"
-	token    string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJuaWNrbmFtZSI6InRlc3QiLCJpc3MiOiJDbG91ZFN0b3JlIiwic3ViIjoidXNlci1hdXRoIiwiZXhwIjoxNzYyMDU4MjYxfQ.zYGGWU8eZcnbAFr5A5fWESaVQMz7DhT4qZk_LnDVcq4"
+	token    string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJuaWNrbmFtZSI6InRlc3QiLCJpc3MiOiJDbG91ZFN0b3JlIiwic3ViIjoidXNlci1hdXRoIiwiZXhwIjoxNzYyMTYxMTU1fQ.q2zPICw7-1hpQh9z9qF4Eq9eVUBfNv_GLKtQzm3bfco"
 )
 
 type HttpResp struct {
