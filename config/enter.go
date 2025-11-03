@@ -7,4 +7,5 @@ type Config struct {
 	Redis  Redis  `yaml:"redis"`
 	Upload Upload `yaml:"upload"`
 	RMQ    RMQ    `yaml:"rmq"`
+	MinIO  MinIO  `yaml:"MinIO"`
 }

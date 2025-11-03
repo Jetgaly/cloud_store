@@ -12,4 +12,5 @@ func init() {
 	InitUploadTempDir(global.Config.Upload.TempPath)
 	InitSnowFlake()
 	InitRMQ()
+	InitMinIO()
 }
