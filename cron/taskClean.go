@@ -67,7 +67,7 @@ func CleanHandler(msg []byte) error {
 	}
 	switch rCode {
 	case 0:
-		//不存在skey：已经被清理或者合并完成被清理
+		//不存在skey：已经被清理
 		return nil
 	case 1:
 		//正在finish//刚刚设置cancel//清理时间没到

@@ -2,6 +2,7 @@ package file
 
 import (
 	"cloud_store/global"
+	"cloud_store/model"
 	"cloud_store/utils"
 	"context"
 
@@ -14,6 +15,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/minio/minio-go/v7"
+	"gorm.io/gorm"
 )
 
 type UploadFinishReq struct {
@@ -203,7 +207,7 @@ func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 			}
 		}
 		//文件hash校验
-		fmt.Println("hash:", rHash)
+		global.Logger.Info("hash:" + rHash)
 		hash, e2 := utils.CalculateSHA256Stream(finalFilePath)
 		if e2 != nil {
 			if _, re1 := global.RDB.Eval(context.TODO(), finishRecoverLua, []string{hKey}, time.Now().Unix()).Result(); re1 != nil {
@@ -218,7 +222,63 @@ func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 			return
 		}
 		//todo: minio ,mysql
+		//minio
+		objectName := Req.UploadId + "." + fileSuffix
+		contentType := utils.GetContentType(fileSuffix)
+		bucketName := global.Config.MinIO.UploadBucket
+		// Upload
+		info, e3 := global.MinioCli.FPutObject(ctx, bucketName, objectName, finalFilePath, minio.PutObjectOptions{ContentType: contentType})
+		if e3 != nil {
+			global.Logger.Error("minio upload err: " + e3.Error())
+			utils.ResponseWithMsg("[internal server err]", ctx)
+			return
+		}
+		//二次校验hash
+		if info.ChecksumSHA256 != hash {
+			global.Logger.Info("infohash:" + info.ChecksumSHA256)
+			utils.ResponseWithCode("1010", ctx)
+			return
+		}
 
+		//mysql
+		fileModel := model.File{
+			Name: objectName,
+			Hash: hash,
+			Path: objectName,
+			Size: uint64(info.Size),
+		}
+		e4 := global.DB.Transaction(func(tx *gorm.DB) error {
+			if e := tx.Create(&fileModel).Error; e != nil {
+				return e
+			}
+			relation := model.UserFile{
+				UserId:   int64(claims.UserId),
+				FileId:   int64(fileModel.ID),
+				FileName: fileName,
+			}
+			if e := tx.Create(&relation).Error; e != nil {
+				return e
+			}
+			return nil
+		})
+		if e4 != nil {
+			global.Logger.Error(fmt.Sprintf("mysql err: %s,upid: %s"+e4.Error(), Req.UploadId))
+			utils.ResponseWithMsg("[internal server err]", ctx)
+			return
+		}
+
+		//清理垃圾
+		//设置状态为cancel，留给定时任务清理
+		_, e5 := global.RDB.HSet(context.TODO(), hKey, []string{
+			"status",
+			"3", //cancel
+		}).Result()
+		if e5 != nil {
+			global.Logger.Error(fmt.Sprintf("redis set cancel err: %s,upid: %s"+e5.Error(), Req.UploadId))
+			utils.ResponseWithMsg("[internal server err]", ctx)
+			return
+		}
+		
 	case 3:
 		//missing
 		utils.ResponseWithCodeAndData("1009", rStr, ctx)
