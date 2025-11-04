@@ -50,3 +50,7 @@ redlock:
     - Qwe@123456
     - 123456
     - 123456
+
+oss:
+  region: cn-shenzhen
+  bucketname: cs-bucket-1104

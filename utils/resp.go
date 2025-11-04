@@ -18,6 +18,7 @@ var errCode = map[string]string{
 	"1011": "no such file",
 	"1012": "range format err, should [bytes=?-?]",
 	"1013": "range over",
+	"1014": "oss msg send err",
 }
 
 type Response struct {

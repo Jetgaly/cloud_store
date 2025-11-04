@@ -9,4 +9,5 @@ type Config struct {
 	RMQ     RMQ     `yaml:"rmq"`
 	MinIO   MinIO   `yaml:"MinIO"`
 	RedLock RedLock `yaml:"redlock"`
+	OSS     OSS     `yaml:"oss"`
 }

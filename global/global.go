@@ -6,6 +6,7 @@ import (
 	"cloud_store/utils"
 	RMQUtils "cloud_store/utils/RabbitMQ"
 
+	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/minio/minio-go/v7"
@@ -24,6 +25,7 @@ var (
 	RMQ              *RMQUtils.RMQ
 	MinioCli         *minio.Client
 	RedLockCreater   *utils.RedLockCreater
+	OSSCli           *oss.Client
 )
 
 const (

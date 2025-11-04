@@ -97,4 +97,38 @@ func InitRMQ() {
 		global.Logger.Fatal("[RMQ]init fail,err: " + e7.Error())
 	}
 
+	//oss队列
+	re4 := channel.ExchangeDeclare(
+		"cs.oss.exc",
+		"direct",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if re4 != nil {
+		global.Logger.Fatal("[RMQ]init fail,err: " + re4.Error())
+	}
+	_, re5 := channel.QueueDeclare(
+		"cs.oss.queue",
+		true,
+		false,
+		false, //允许多个消费者连接队列
+		false,
+		nil,
+	)
+	if re5 != nil {
+		global.Logger.Fatal("[RMQ]init fail,err: " + re5.Error())
+	}
+	re5 = channel.QueueBind(
+		"cs.oss.queue",
+		"cs.oss.queue",
+		"cs.oss.exc",
+		false,
+		nil,
+	)
+	if re5 != nil {
+		global.Logger.Fatal("[RMQ]init fail,err: " + re5.Error())
+	}
 }

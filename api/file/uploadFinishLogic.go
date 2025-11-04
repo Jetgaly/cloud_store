@@ -4,7 +4,9 @@ import (
 	"cloud_store/global"
 	"cloud_store/model"
 	"cloud_store/utils"
+	RMQUtils "cloud_store/utils/RabbitMQ"
 	"context"
+	"encoding/json"
 	"errors"
 
 	"fmt"
@@ -17,6 +19,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redsync/redsync/v4"
+	"github.com/rabbitmq/amqp091-go"
 
 	"github.com/minio/minio-go/v7"
 	"gorm.io/gorm"
@@ -83,6 +86,11 @@ end
 return 0
 
 `
+
+type OSSMqMsg struct {
+	MinIOPath string `json:"path"`
+	Id        string `json:"id"`
+}
 
 func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 	var Req UploadFinishReq
@@ -336,6 +344,68 @@ func (*FileApi) UploadFinishLogic(ctx *gin.Context) {
 			return
 		}
 
+		//cs.oss.queue
+		var cwc *RMQUtils.ChannelWithConfirm
+		for {
+			cwc, err = global.RMQ.Get()
+			if errors.Is(err, RMQUtils.ErrTimeout) {
+				global.Logger.Error("[RMQ] get channel timeout")
+				continue
+			} else if err != nil {
+				global.Logger.Error(fmt.Sprintf("[RMQ] get channel err:%s,upid:%s", err.Error(), Req.UploadId))
+				utils.ResponseWithMsg("[internal server err]", ctx)
+				return
+			}
+			break
+		}
+		confirm := *(cwc.Confirm)
+		var body []byte
+		fileIdStr := strconv.Itoa(int(fileModel.ID))
+		mqMsg := OSSMqMsg{
+			MinIOPath: objectName,
+			Id:        fileIdStr,
+		}
+		body, err = json.Marshal(mqMsg)
+		if err != nil {
+			global.Logger.Error(fmt.Sprintf("[json]oss marshal err:%s,upid:%s", err.Error(), Req.UploadId))
+			utils.ResponseWithCode("1014", ctx)
+			return
+		}
+		err = cwc.Channel.PublishWithContext(
+			context.TODO(),
+			"cs.oss.exc",   // exchange
+			"cs.oss.queue", // routing key
+			false,          // mandatory
+			false,          // immediate
+			amqp091.Publishing{
+				ContentType:  "application/json",
+				Body:         body,
+				DeliveryMode: amqp091.Persistent, // 消息持久化
+				Timestamp:    time.Now(),
+			})
+		if err != nil {
+			global.Logger.Error(fmt.Sprintf("[RMQ]oss send err:%s,upid:%s", err.Error(), Req.UploadId))
+			utils.ResponseWithCode("1014", ctx)
+			return
+		}
+		select {
+		case cf := <-confirm:
+			if cf.Ack {
+				global.Logger.Info("Message confirmed")
+			} else {
+				global.Logger.Error(fmt.Sprintf("[RMQ]oss send fail,upid:%s", Req.UploadId))
+				cwc.Channel.Close()
+				utils.ResponseWithCode("1014", ctx)
+				return
+			}
+		case <-time.After(5 * time.Second): //超时时间
+			global.Logger.Error(fmt.Sprintf("[RMQ]oss confirm timeout,upid:%s", Req.UploadId))
+			//超时直接关闭，不要放回channel池
+			cwc.Channel.Close()
+			utils.ResponseWithCode("1014", ctx)
+			return
+		}
+		global.RMQ.Put(cwc)
 	case 3:
 		//missing
 		utils.ResponseWithCodeAndData("1009", rStr, ctx)
