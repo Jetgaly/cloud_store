@@ -33,4 +33,5 @@ const (
 	FileMetaPrefix  string = "cs:meta:"
 	FileSetPrefix   string = "cs:set:"
 	RedLockPrefix   string = "cs:lock:"
+	LimitKeyPrefix string = "cs:limit:"
 )

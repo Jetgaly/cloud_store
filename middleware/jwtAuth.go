@@ -19,6 +19,18 @@ func JwtAuth() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
+		//limit
+		ok,err:=RedisLimitBucket(claims.UserId)
+		if err!=nil{
+			utils.ResponseWithMsg("[internal server err]",ctx)
+			ctx.Abort()
+			return 
+		}
+		if !ok{
+			utils.ResponseWithCode("1015",ctx)
+			ctx.Abort()
+			return 
+		}
 		ctx.Set("claims", claims)
 	}
 }

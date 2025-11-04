@@ -19,6 +19,8 @@ var errCode = map[string]string{
 	"1012": "range format err, should [bytes=?-?]",
 	"1013": "range over",
 	"1014": "oss msg send err",
+	
+	"1015": "ask too frequently",
 }
 
 type Response struct {
