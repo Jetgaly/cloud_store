@@ -14,4 +14,5 @@ func init() {
 	InitRMQ()
 	InitMinIO()
 	InitRedLock()
+	InitCronTask()
 }

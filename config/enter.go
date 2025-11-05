@@ -11,4 +11,5 @@ type Config struct {
 	RedLock RedLock `yaml:"redlock"`
 	OSS     OSS     `yaml:"oss"`
 	ES      ES      `yaml:"es"`
+	ServeAt string  `yaml:"serve_at"`
 }

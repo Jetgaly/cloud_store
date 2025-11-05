@@ -21,6 +21,7 @@ func InitCronTask() {
 		Count:   5,
 	}
 	gcrontask.CleanTask = &cleanTask
+	global.Logger.Info("cleantask start")
 	cleanTask.Start()
 
 	//uploadOSS任务
@@ -36,5 +37,6 @@ func InitCronTask() {
 		Count:   5,
 	}
 	gcrontask.OSSUploadTask = &OSSTask
+	global.Logger.Info("osstask start")
 	OSSTask.Start()
 }

@@ -115,7 +115,7 @@ func (c *Consumers) Stop() {
 	// 设置超时
 	select {
 	case <-done:
-		global.Logger.Info("consumers have stopped")
+		global.Logger.Info(fmt.Sprintf("consumers:%s have stopped", c.Queue))
 	case <-time.After(30 * time.Second):
 		global.Logger.Info("consumers stopping timeout 30 sec, quit forcefuly")
 	}
