@@ -1,0 +1,17 @@
+dataSourceKey: CSDS
+destination: cloud_store
+groupId: g_cloud_store
+esMapping:
+  _index: user_files
+  _id: _id
+  upsert: true
+  sql: |
+    SELECT
+      uf.id AS _id,
+      uf.user_id AS user_id,
+      uf.file_id AS file_id,
+      uf.file_name AS file_name,
+      uf.created_at AS created_at
+    FROM user_files uf
+  etlCondition: "where uf.id >= 1"
+  commitBatch: 3000

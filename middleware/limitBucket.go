@@ -10,10 +10,10 @@ import (
 
 var limitLua string = `
 
-local rate = 3 
+local rate = 10 
 
 if redis.call('exists', KEYS[1]) == 0 then
-    redis.call('hmset', KEYS[1], 'token', 2, 'act', ARGV[1])
+    redis.call('hmset', KEYS[1], 'token', 9, 'act', ARGV[1])
     redis.call('expire', KEYS[1], 1800) -- 30min
     return 1
 else
@@ -25,7 +25,7 @@ else
     local pass = now - act
     local newtoken = pass * rate
     if newtoken > 0 then
-        t = math.min(3, t + newtoken)
+        t = math.min(10, t + newtoken)
         redis.call('hset', KEYS[1], 'act', now)
     end
     

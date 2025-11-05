@@ -4,6 +4,7 @@ import (
 	"cloud_store/global"
 	"cloud_store/model"
 	"cloud_store/utils"
+	"context"
 	"strconv"
 	"time"
 
@@ -56,7 +57,19 @@ func (*FileApi) GetFileListLogic(ctx *gin.Context) {
 		}
 	} else {
 		//es
-		
+		resp, er := utils.SearchDocuments(context.TODO(), global.ESCli, "user_files", Req.Key, Req.Page, Req.Limit)
+		if er != nil {
+			global.Logger.Error("es getlist err: " + er.Error())
+			utils.ResponseWithMsg("[internal server err]", ctx)
+			return
+		}
+		for _, v := range resp.Hits.Hits {
+			respList = append(respList, FileElem{
+				Id:       v.Id,
+				FileName: v.Source.FileName,
+				CreateAt: v.Source.CreatedAt,
+			})
+		}
 	}
 	utils.ResponseWithData(respList, ctx)
 }

@@ -7,6 +7,7 @@ import (
 	RMQUtils "cloud_store/utils/RabbitMQ"
 
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
+	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/minio/minio-go/v7"
@@ -26,6 +27,7 @@ var (
 	MinioCli         *minio.Client
 	RedLockCreater   *utils.RedLockCreater
 	OSSCli           *oss.Client
+	ESCli            *elasticsearch.Client
 )
 
 const (
@@ -33,5 +35,5 @@ const (
 	FileMetaPrefix  string = "cs:meta:"
 	FileSetPrefix   string = "cs:set:"
 	RedLockPrefix   string = "cs:lock:"
-	LimitKeyPrefix string = "cs:limit:"
+	LimitKeyPrefix  string = "cs:limit:"
 )

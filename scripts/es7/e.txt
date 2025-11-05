@@ -1,0 +1,44 @@
+PUT /user_files
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "refresh_interval": "3s"
+  },
+  "mappings": {
+    "properties": {
+      "user_id": {
+        "type": "long"
+      },
+      "file_id": {
+        "type": "long"
+      },
+      "file_name": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart", //可以用ik_max_word，关键字细粒度分词
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 512
+          }
+        }
+      },
+      "created_at": {
+        "type": "date",
+        "format": "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+      }
+    }
+  }
+}
+
+GET /user_files
+
+DELETE /user_files
+
+GET /user_files/_search
+{
+	"query":{
+		"match_all":{}
+	}
+}

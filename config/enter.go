@@ -10,4 +10,5 @@ type Config struct {
 	MinIO   MinIO   `yaml:"MinIO"`
 	RedLock RedLock `yaml:"redlock"`
 	OSS     OSS     `yaml:"oss"`
+	ES      ES      `yaml:"es"`
 }

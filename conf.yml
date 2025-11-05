@@ -54,3 +54,6 @@ redlock:
 oss:
   region: cn-shenzhen
   bucketname: cs-bucket-1104
+
+es:
+  addr: http://127.0.0.1:9200
