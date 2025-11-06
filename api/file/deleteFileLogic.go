@@ -41,15 +41,15 @@ func (*FileApi) DelFileLogic(ctx *gin.Context) {
 		if claims.UserId != id {
 			return nil
 		}
-		e = global.DB.Select("size").Find(&fileModel).Error
+		e = tx.Select("size").Find(&fileModel).Error
 		if e != nil {
 			return e
 		}
-		e = global.DB.Model(&model.User{}).Where("id=?", claims.UserId).Update("available_volume", gorm.Expr("available_volume + ?", fileModel.Size)).Error
+		e = tx.Model(&model.User{}).Where("id=?", claims.UserId).Update("available_volume", gorm.Expr("available_volume + ?", fileModel.Size)).Error
 		if e != nil {
 			return e
 		}
-		e = global.DB.Delete(&relation).Error
+		e = tx.Delete(&relation).Error
 		if e != nil {
 			return e
 		}

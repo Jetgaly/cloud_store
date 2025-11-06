@@ -10,7 +10,9 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
 	"github.com/gin-gonic/gin"
 	"github.com/minio/minio-go/v7"
 	"gorm.io/gorm"
@@ -84,7 +86,7 @@ func (*FileApi) DownloadLogic(ctx *gin.Context) {
 			//直接返回整个文件
 			start = 0
 			end = totalSize - 1
-			ctx.Status(200)
+			ctx.Status(206)
 			ctx.Header("Content-Length", fmt.Sprintf("%d", totalSize))
 			ctx.Header("Content-Type", "application/octet-stream")
 		} else {
@@ -173,5 +175,24 @@ func (*FileApi) DownloadLogic(ctx *gin.Context) {
 		return
 	} else {
 		//oss
+		result, oerr := global.OSSCli.Presign(context.TODO(), &oss.GetObjectRequest{
+			Bucket: oss.Ptr(global.Config.OSS.BucketName),
+			Key:    oss.Ptr(fileModel.Path),
+		},
+			oss.PresignExpires(10*time.Minute),
+		)
+		if oerr != nil {
+			global.Logger.Error(fmt.Sprintf("OSS Presign err: %s", oerr.Error()))
+			ctx.Status(500)
+			return
+		}
+		OSSResp := struct {
+			URL string    `json:"url"`
+			Ex  time.Time `json:"ex"`
+		}{
+			URL: result.URL,
+			Ex:  result.Expiration,
+		}
+		utils.ResponseWithData(OSSResp, ctx)
 	}
 }
